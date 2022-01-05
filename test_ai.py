@@ -1,19 +1,23 @@
-import random
 from collections import Counter
+
+import click
 
 from main import play_game, cpu_player, GameState, WORDS, Player
 
 
 def main():
+    click.echo('Starting...')
+
     stats = Counter()
-    for word in random.sample(WORDS, 100):
-        winner, _ = play_game(cpu_player, GameState(word), quiet=True)
-        stats[winner] += 1
+    with click.progressbar(WORDS) as bar:
+        for word in bar:
+            winner, _ = play_game(cpu_player, GameState(word), quiet=True)
+            stats[winner] += 1
 
-        if winner == Player.WordCzar:
-            print(word)
+            if winner == Player.WordCzar:
+                click.echo(word)
 
-    print(stats)
+    click.echo(stats)
 
 
 if __name__ == '__main__':

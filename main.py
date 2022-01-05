@@ -178,7 +178,11 @@ def cpu_player() -> str:
     def get_best_word(words):
         def score_word(w):
             score = 0
+            seen = set()
             for i, let in enumerate(w):
+                if let in seen:
+                    continue
+                seen.add(let)
                 if position_mask[i]:
                     if let not in position_guesses[i]:
                         score += dist[let]
@@ -235,6 +239,9 @@ def cpu_player() -> str:
                           if word_is_compatible_with_hint(word)]
         dist = get_dist(possible_words)
 
+        if len(possible_words) == 1:
+            yield possible_words[0]
+
         if len(guesses) < MAX_GUESSES - 1:
             current_guess = get_best_word(WORDS)
         else:
@@ -259,7 +266,8 @@ def play_game(player, state: GameState, *, quiet=False):
 
 
 def main():
-    state = new_game()
+    # state = new_game()
+    state = GameState('gecks')
     winner, state = play_game(cpu_player, state)
     click.echo(f'{winner} won in {len(state.guesses)} moves! Word was "{state.solution}"')
 
