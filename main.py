@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -43,6 +44,15 @@ class GameState:
 
 def new_game() -> GameState:
     return GameState(random.choice(WORDS))
+
+
+def fill_hints(state: GameState) -> GameState:
+    return GameState(
+        state.solution,
+        state.guesses,
+        [get_hint_for_guess(guess, state)
+         for guess in state.guesses]
+    )
 
 
 def get_winner(state: GameState) -> Optional[Player]:
@@ -100,20 +110,24 @@ def get_hint_for_guess(guess: str, state: GameState) -> [Hint]:
 
 def display_game(state: GameState):
     """
-    >>> display_game(GameState('apple', ['perot', 'aaper']))
-    perot
-    ??xxx
-    -----
-    aaper
-    *?*?x
+    >>> state = GameState('apple', ['perot', 'aaper'])
+    >>> state = fill_hints(state)
+    >>> display_game(state)
+    perot  ??xxx
+    aaper  *?*?x
     """
-    separator = '-' * WORD_LENGTH
-    first = True
+
+    color_map = {
+        Hint.Correct: 'green',
+        Hint.CorrectLetter: 'yellow',
+        Hint.Incorrect: 'red',
+    }
+
     for guess, hint in zip(state.guesses, state.hints):
-        if not first:
-            print(separator)
-        print(f'{guess}\n{"".join(map(str, hint))}')
-        first = False
+        colored_guess = ''.join(click.style(letter, fg=color_map[h])
+                                for letter, h in zip(guess, hint))
+        output = f'{colored_guess}  {"".join(map(str, hint))}'
+        click.echo(output)
 
 
 class WordleError(Exception):
@@ -140,14 +154,61 @@ def validate_word_input(word: str):
 
 def human_player() -> str:
     while True:
-        guesses, hints = yield click.prompt('>>>', value_proc=validate_word_input)
+        yield click.prompt('>>>', value_proc=validate_word_input)
+
+
+def cpu_player() -> str:
+    dict_histogram = Counter()
+    for word in WORDS:
+        for letter in word:
+            dict_histogram[letter] += 1
+
+    normalizing_factor = len(WORDS) * WORD_LENGTH
+
+    possible_words = WORDS
+
+    def get_best_word(words):
+        def score_word(w):
+            return sum(dict_histogram[x] / normalizing_factor
+                       for x in set(w))
+
+        return max(words, key=score_word)
+
+    current_guess = get_best_word(possible_words)
+    while True:
+        guesses, hints = yield current_guess
+        assert guesses[-1] == current_guess
+
+        # Update set of possible words
+        def word_is_compatible_with_hint(word: str):
+            for pos, (word_let, guess_let, hint) in enumerate(zip(word, current_guess, hints[-1])):
+                if hint == Hint.Correct:
+                    if word_let != guess_let:
+                        return False
+                elif hint == Hint.CorrectLetter:
+                    if guess_let not in word:
+                        return False
+                    if guess_let not in (word[:pos] + word[pos + 1:]):
+                        # Rule out the word when the correct letter cannot
+                        # be placed elsewhere in this word. For instance:
+                        #  abcde  (xx?xx)
+                        # would eliminate "fgchi" because there's no "c"
+                        # in a non-matching position.
+                        return False
+                elif hint == Hint.Incorrect:
+                    if guess_let in word:
+                        return False
+            return True
+
+        possible_words = [word for word in possible_words
+                          if word_is_compatible_with_hint(word)]
+
+        current_guess = get_best_word(possible_words)
 
 
 def play_game(player):
     game = new_game()
     player = player()
-
-    print(f'DEBUG: word is "{game.solution}"')
 
     while get_winner(game) is None:
         display_game(game)
@@ -159,7 +220,7 @@ def play_game(player):
 
     display_game(game)
     winner = get_winner(game)
-    print(f'{winner} won! Word was "{game.solution}"')
+    click.echo(f'{winner} won in {len(game.guesses)} moves! Word was "{game.solution}"')
 
 
 if __name__ == '__main__':
