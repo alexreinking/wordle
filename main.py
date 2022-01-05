@@ -10,7 +10,7 @@ import click
 MAX_GUESSES = 6
 WORD_LENGTH = 5
 
-WORDS_SET = set(word.lower() for word in Path('./dictionary.csv').read_text().split('\n')
+WORDS_SET = set(word.lower() for word in Path('dictionary.txt').read_text().split('\n')
                 if len(word) == WORD_LENGTH)
 WORDS = list(sorted(WORDS_SET))
 
@@ -266,8 +266,7 @@ def play_game(player, state: GameState, *, quiet=False):
 
 
 def main():
-    # state = new_game()
-    state = GameState('gecks')
+    state = new_game()
     winner, state = play_game(cpu_player, state)
     click.echo(f'{winner} won in {len(state.guesses)} moves! Word was "{state.solution}"')
 
