@@ -158,26 +158,33 @@ def human_player() -> str:
 
 
 def cpu_player() -> str:
-    dict_histogram = Counter()
-    for word in WORDS:
-        for letter in word:
-            dict_histogram[letter] += 1
-
-    normalizing_factor = len(WORDS) * WORD_LENGTH
-
-    possible_words = WORDS
+    position_mask = [1] * WORD_LENGTH
 
     def get_best_word(words):
+        dict_histogram = Counter()
+        for word in words:
+            for i, letter in enumerate(word):
+                dict_histogram[letter] += 1 * position_mask[i]
+
+        normalizing_factor = len(words) * WORD_LENGTH
+
         def score_word(w):
-            return sum(dict_histogram[x] / normalizing_factor
-                       for x in set(w))
+            return sum(
+                dict_histogram[x] / normalizing_factor
+                for i, x in enumerate(w)
+            )
 
         return max(words, key=score_word)
 
+    possible_words = WORDS
     current_guess = get_best_word(possible_words)
     while True:
         guesses, hints = yield current_guess
         assert guesses[-1] == current_guess
+
+        for i, hint in enumerate(hints[-1]):
+            if hint == Hint.Correct:
+                position_mask[i] = 0
 
         # Update set of possible words
         def word_is_compatible_with_hint(word: str):
@@ -186,7 +193,11 @@ def cpu_player() -> str:
                     if word_let != guess_let:
                         return False
                 elif hint == Hint.CorrectLetter:
+                    if guess_let == word_let:
+                        # Would have been Hint.Correct otherwise.
+                        return False
                     if guess_let not in word:
+                        # The guessed letter must appear somewhere in the word.
                         return False
                     if guess_let not in (word[:pos] + word[pos + 1:]):
                         # Rule out the word when the correct letter cannot
@@ -224,4 +235,4 @@ def play_game(player):
 
 
 if __name__ == '__main__':
-    play_game(human_player)
+    play_game(cpu_player)
