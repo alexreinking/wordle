@@ -159,28 +159,48 @@ def human_player() -> str:
 
 def cpu_player() -> str:
     position_mask = [1] * WORD_LENGTH
+    position_guesses = [set() for _ in range(WORD_LENGTH)]
+    all_letter_guesses = set()
 
-    def get_best_word(words):
+    def get_dist(words):
+        normalizing_factor = len(words) * WORD_LENGTH
+
         dict_histogram = Counter()
         for word in words:
             for i, letter in enumerate(word):
                 dict_histogram[letter] += 1 * position_mask[i]
 
-        normalizing_factor = len(words) * WORD_LENGTH
+        for k in dict_histogram:
+            dict_histogram[k] /= normalizing_factor
 
+        return dict_histogram
+
+    def get_best_word(words):
         def score_word(w):
-            return sum(
-                dict_histogram[x] / normalizing_factor
-                for i, x in enumerate(w)
-            )
+            score = 0
+            for i, let in enumerate(w):
+                if position_mask[i]:
+                    if let not in position_guesses[i]:
+                        score += dist[let]
+                else:
+                    if let not in all_letter_guesses:
+                        score += dist[let]
+            return score
 
         return max(words, key=score_word)
 
     possible_words = WORDS
+    dist = get_dist(possible_words)
     current_guess = get_best_word(possible_words)
+
     while True:
         guesses, hints = yield current_guess
         assert guesses[-1] == current_guess
+
+        # Record which letters we have guessed in which positions
+        for let, guess_set in zip(current_guess, position_guesses):
+            guess_set.add(let)
+            all_letter_guesses.add(let)
 
         for i, hint in enumerate(hints[-1]):
             if hint == Hint.Correct:
@@ -213,26 +233,36 @@ def cpu_player() -> str:
 
         possible_words = [word for word in possible_words
                           if word_is_compatible_with_hint(word)]
+        dist = get_dist(possible_words)
 
-        current_guess = get_best_word(possible_words)
+        if len(guesses) < MAX_GUESSES - 1:
+            current_guess = get_best_word(WORDS)
+        else:
+            current_guess = get_best_word(possible_words)
 
 
-def play_game(player):
-    game = new_game()
+def play_game(player, state: GameState, *, quiet=False):
     player = player()
 
-    while get_winner(game) is None:
-        display_game(game)
+    while get_winner(state) is None:
+        if not quiet:
+            display_game(state)
 
-        hints = None if not game.guesses else (game.guesses, game.hints)
+        hints = None if not state.guesses else (state.guesses, state.hints)
 
         new_guess = player.send(hints)
-        game = submit_guess(game, new_guess)
+        state = submit_guess(state, new_guess)
 
-    display_game(game)
-    winner = get_winner(game)
-    click.echo(f'{winner} won in {len(game.guesses)} moves! Word was "{game.solution}"')
+    if not quiet:
+        display_game(state)
+    return get_winner(state), state
+
+
+def main():
+    state = new_game()
+    winner, state = play_game(cpu_player, state)
+    click.echo(f'{winner} won in {len(state.guesses)} moves! Word was "{state.solution}"')
 
 
 if __name__ == '__main__':
-    play_game(cpu_player)
+    main()
