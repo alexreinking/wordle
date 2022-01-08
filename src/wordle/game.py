@@ -1,22 +1,12 @@
 import random
 from typing import Optional
 
-import click
-
-from .types import GameState, WORDS, Player, MAX_GUESSES, Hint, WORDS_SET
+from .types import GameState, WORDS, Player, MAX_GUESSES, Hint, WORDS_SET, WORD_LENGTH
 
 
-def new_game() -> GameState:
-    return GameState(random.choice(WORDS))
-
-
-def fill_hints(state: GameState) -> GameState:
-    return GameState(
-        state.solution,
-        state.guesses,
-        [get_hint_for_guess(guess, state)
-         for guess in state.guesses]
-    )
+def new_game(word='') -> GameState:
+    assert not word or len(word) == WORD_LENGTH
+    return GameState(word or random.choice(WORDS))
 
 
 def get_winner(state: GameState) -> Optional[Player]:
@@ -72,28 +62,6 @@ def get_hint_for_guess(guess: str, state: GameState) -> [Hint]:
     return hints
 
 
-def display_game(state: GameState):
-    """
-    >>> state = GameState('apple', ['perot', 'aaper'])
-    >>> state = fill_hints(state)
-    >>> display_game(state)
-    perot  ??xxx
-    aaper  *?*?x
-    """
-
-    color_map = {
-        Hint.Correct: 'green',
-        Hint.CorrectLetter: 'yellow',
-        Hint.Incorrect: 'red',
-    }
-
-    for guess, hint in zip(state.guesses, state.hints):
-        colored_guess = ''.join(click.style(letter, fg=color_map[h])
-                                for letter, h in zip(guess, hint))
-        output = f'{colored_guess}  {"".join(map(str, hint))}'
-        click.echo(output)
-
-
 def submit_guess(state: GameState, guess: str) -> GameState:
     assert len(state.guesses) < MAX_GUESSES
     assert guess in WORDS_SET
@@ -105,18 +73,16 @@ def submit_guess(state: GameState, guess: str) -> GameState:
     )
 
 
-def play_game(player, state: GameState, *, quiet=False):
+def play_game(player, state: Optional[GameState] = None):
     player = player()
 
-    while get_winner(state) is None:
-        if not quiet:
-            display_game(state)
+    if state is None:
+        state = new_game()
 
+    while get_winner(state) is None:
         hints = None if not state.guesses else (state.guesses, state.hints)
 
         new_guess = player.send(hints)
         state = submit_guess(state, new_guess)
 
-    if not quiet:
-        display_game(state)
     return get_winner(state), state

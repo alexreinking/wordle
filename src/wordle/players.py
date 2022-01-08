@@ -5,15 +5,33 @@ import click
 from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES
 
 
-def human_player() -> str:
-    def validate_word_input(word: str):
-        word = word.lower()
-        if word not in WORDS_SET:
-            raise click.UsageError(f'{word} is not a valid word!')
-        return word
+def _validate_word_input(word: str):
+    word = word.lower()
+    if word not in WORDS_SET:
+        raise click.UsageError(f'{word} is not a valid word!')
+    return word
 
+
+def _render(guesses, hints):
+    color_map = {
+        Hint.Correct: 'green',
+        Hint.CorrectLetter: 'yellow',
+        Hint.Incorrect: 'red',
+    }
+
+    for guess, hint in zip(guesses, hints):
+        colored_guess = ''.join(click.style(letter, fg=color_map[h])
+                                for letter, h in zip(guess, hint))
+        output = f'{colored_guess}  {"".join(map(str, hint))}'
+        click.echo(output)
+
+
+def human_player() -> str:
+    info = None
     while True:
-        yield click.prompt('>>>', value_proc=validate_word_input)
+        if info:
+            _render(*info)
+        info = yield click.prompt('>>>', value_proc=_validate_word_input)
 
 
 def cpu_player() -> str:
@@ -100,6 +118,7 @@ def cpu_player() -> str:
 
         if len(possible_words) == 1:
             yield possible_words[0]
+            return
 
         if len(guesses) < MAX_GUESSES - 1:
             current_guess = get_best_word(WORDS)
