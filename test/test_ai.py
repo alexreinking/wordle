@@ -2,7 +2,7 @@ from collections import Counter
 
 import click
 
-from main import play_game, cpu_player, GameState, WORDS, Player
+from wordle import play_game, cpu_player, GameState, WORDS, Player
 
 
 def main():
