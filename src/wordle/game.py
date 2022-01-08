@@ -1,7 +1,7 @@
 import random
 from typing import Optional
 
-from .types import GameState, WORDS, Player, MAX_GUESSES, Hint, WORDS_SET, WORD_LENGTH
+from .types import GameState, WORDS, Player, MAX_GUESSES, Hint, WORDS_SET, WORD_LENGTH, get_hint_for_guess
 
 
 def new_game(word='') -> GameState:
@@ -43,23 +43,7 @@ def get_hint(state: GameState) -> [Hint]:
     guess = state.guesses[-1]
     assert len(guess) == len(state.solution)
 
-    return get_hint_for_guess(guess, state)
-
-
-def get_hint_for_guess(guess: str, state: GameState) -> [Hint]:
-    """
-    >>> get_hint_for_guess('aaper', GameState('apple'))
-    [<Hint.Correct: 0>, <Hint.CorrectLetter: 1>, <Hint.Correct: 0>, <Hint.CorrectLetter: 1>, <Hint.Incorrect: 2>]
-    """
-    hints = []
-    for guess_ch, sol_ch in zip(guess, state.solution):
-        if guess_ch == sol_ch:
-            hints.append(Hint.Correct)
-        elif guess_ch in state.solution:
-            hints.append(Hint.CorrectLetter)
-        else:
-            hints.append(Hint.Incorrect)
-    return hints
+    return get_hint_for_guess(guess, state.solution)
 
 
 def submit_guess(state: GameState, guess: str) -> GameState:
@@ -69,7 +53,7 @@ def submit_guess(state: GameState, guess: str) -> GameState:
     return GameState(
         state.solution,
         state.guesses + [guess],
-        state.hints + [get_hint_for_guess(guess, state)]
+        state.hints + [get_hint_for_guess(guess, state.solution)]
     )
 
 

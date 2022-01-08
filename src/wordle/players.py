@@ -1,8 +1,9 @@
+import random
 from collections import Counter
 
 import click
 
-from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES
+from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES, get_hint_for_guess
 
 
 def _validate_word_input(word: str):
@@ -26,7 +27,7 @@ def _render(guesses, hints):
         click.echo(output)
 
 
-def human_player() -> str:
+def human_player():
     info = None
     while True:
         if info:
@@ -34,7 +35,33 @@ def human_player() -> str:
         info = yield click.prompt('>>>', value_proc=_validate_word_input)
 
 
-def cpu_player() -> str:
+def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
+    for guess, hint in zip(reversed(guesses), reversed(hints)):
+        for pos, (word_let, guess_let, hint_let) in enumerate(zip(word, guess, hint)):
+            if hint_let == Hint.Correct:
+                if word_let != guess_let:
+                    return False
+            elif hint_let == Hint.CorrectLetter:
+                if guess_let == word_let:
+                    # Would have been Hint.Correct otherwise.
+                    return False
+                if guess_let not in word:
+                    # The guessed letter must appear somewhere in the word.
+                    return False
+                if guess_let not in (word[:pos] + word[pos + 1:]):
+                    # Rule out the word when the correct letter cannot
+                    # be placed elsewhere in this word. For instance:
+                    #  abcde  (xx?xx)
+                    # would eliminate "fgchi" because there's no "c"
+                    # in a non-matching position.
+                    return False
+            elif hint_let == Hint.Incorrect:
+                if guess_let in word:
+                    return False
+    return True
+
+
+def cpu_player():
     position_mask = [1] * WORD_LENGTH
     position_guesses = [set() for _ in range(WORD_LENGTH)]
     all_letter_guesses = set()
@@ -87,33 +114,8 @@ def cpu_player() -> str:
             if hint == Hint.Correct:
                 position_mask[i] = 0
 
-        # Update set of possible words
-        def word_is_compatible_with_hint(word: str):
-            for pos, (word_let, guess_let, hint) in enumerate(zip(word, current_guess, hints[-1])):
-                if hint == Hint.Correct:
-                    if word_let != guess_let:
-                        return False
-                elif hint == Hint.CorrectLetter:
-                    if guess_let == word_let:
-                        # Would have been Hint.Correct otherwise.
-                        return False
-                    if guess_let not in word:
-                        # The guessed letter must appear somewhere in the word.
-                        return False
-                    if guess_let not in (word[:pos] + word[pos + 1:]):
-                        # Rule out the word when the correct letter cannot
-                        # be placed elsewhere in this word. For instance:
-                        #  abcde  (xx?xx)
-                        # would eliminate "fgchi" because there's no "c"
-                        # in a non-matching position.
-                        return False
-                elif hint == Hint.Incorrect:
-                    if guess_let in word:
-                        return False
-            return True
-
         possible_words = [word for word in possible_words
-                          if word_is_compatible_with_hint(word)]
+                          if _word_is_compatible_with_hints(word, guesses, hints)]
         dist = get_dist(possible_words)
 
         if len(possible_words) == 1:
@@ -124,3 +126,37 @@ def cpu_player() -> str:
             current_guess = get_best_word(WORDS)
         else:
             current_guess = get_best_word(possible_words)
+
+
+def optimal_player():
+    possible_words = WORDS
+    guesses, hints = [], []
+
+    def get_guess() -> str:
+        if len(possible_words) == 1:
+            return possible_words[0]
+
+        sample_size = min(len(possible_words), 128)
+
+        best = float('inf'), ''
+        for guess in random.sample(WORDS, 256):
+            score = 0
+            for solution in random.sample(possible_words, sample_size):
+                for alternate in random.sample(possible_words, sample_size):
+                    score += _word_is_compatible_with_hints(
+                        alternate,
+                        guesses + [guess],
+                        hints + [get_hint_for_guess(guess, solution)]
+                    )
+            score = score / sample_size
+            best = min(best, (score, guess))
+        return best[1]
+
+    click.echo(f'We start with {len(possible_words)} possible words.')
+    while True:
+        current_guess = get_guess()
+        click.echo(f'Guessing "{current_guess}"...')
+        guesses, hints = yield current_guess
+        possible_words = [word for word in possible_words
+                          if _word_is_compatible_with_hints(word, guesses, hints)]
+        click.echo(f'There are now {len(possible_words)} possible words.')
