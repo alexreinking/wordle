@@ -136,19 +136,20 @@ def optimal_player():
         if len(possible_words) == 1:
             return possible_words[0]
 
-        sample_size = min(len(possible_words), 128)
+        sample_size = 128
+        inner_sample_size = min(len(possible_words), sample_size)
 
         best = float('inf'), ''
-        for guess in random.sample(WORDS, 256):
+        for guess in random.sample(WORDS, sample_size):
             score = 0
-            for solution in random.sample(possible_words, sample_size):
-                for alternate in random.sample(possible_words, sample_size):
+            for solution in random.sample(possible_words, inner_sample_size):
+                for alternate in random.sample(possible_words, inner_sample_size):
                     score += _word_is_compatible_with_hints(
                         alternate,
                         guesses + [guess],
                         hints + [get_hint_for_guess(guess, solution)]
                     )
-            score = score / sample_size
+            score = score / inner_sample_size
             best = min(best, (score, guess))
         return best[1]
 
