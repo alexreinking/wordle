@@ -27,7 +27,7 @@ def _render(guesses, hints):
         click.echo(output)
 
 
-def human_player():
+def human():
     info = None
     while True:
         if info:
@@ -61,7 +61,7 @@ def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
     return True
 
 
-def cpu_player():
+def cpu():
     position_mask = [1] * WORD_LENGTH
     position_guesses = [set() for _ in range(WORD_LENGTH)]
     all_letter_guesses = set()
@@ -128,7 +128,7 @@ def cpu_player():
             current_guess = get_best_word(possible_words)
 
 
-def optimal_player():
+def optimal():
     possible_words = WORDS
     guesses, hints = [], []
 
@@ -161,3 +161,6 @@ def optimal_player():
         possible_words = [word for word in possible_words
                           if _word_is_compatible_with_hints(word, guesses, hints)]
         click.echo(f'There are now {len(possible_words)} possible words.')
+
+
+__all__ = [human, cpu, optimal]
