@@ -1,11 +1,14 @@
 import click
 
-from wordle import human_player, play_game, cpu_player
-from wordle.players import optimal_player
+import wordle
+import wordle.players
 
 
-def main():
-    winner, state = play_game(optimal_player)
+@click.command()
+@click.option('--player', default='human', type=click.Choice(['human', 'cpu', 'optimal']))
+def main(player):
+    player_fn = getattr(wordle.players, f'{player}_player')
+    winner, state = wordle.play_game(player_fn)
     click.echo(f'{winner.name} won in {len(state.guesses)} moves! Word was "{state.solution}"')
 
 

@@ -23,7 +23,7 @@ def _render(guesses, hints):
     for guess, hint in zip(guesses, hints):
         colored_guess = ''.join(click.style(letter, fg=color_map[h])
                                 for letter, h in zip(guess, hint))
-        output = f'{colored_guess}  {"".join(map(str, hint))}'
+        output = f'{colored_guess}  {"".join(x.emoji for x in hint)}'
         click.echo(output)
 
 

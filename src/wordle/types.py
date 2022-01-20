@@ -24,6 +24,16 @@ class Hint(Enum):
             case Hint.Incorrect:
                 return 'x'
 
+    @property
+    def emoji(self):
+        match self:
+            case Hint.Correct:
+                return u'🟩'
+            case Hint.CorrectLetter:
+                return u'🟨'
+            case Hint.Incorrect:
+                return u'🟥'
+
 
 def get_hint_for_guess(guess: str, solution: str) -> [Hint]:
     """
