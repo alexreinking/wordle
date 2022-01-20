@@ -1,0 +1,31 @@
+import random
+from collections import Counter
+
+import click
+
+from wordle import play_game, players, new_game, WORDS, Player
+
+
+def main():
+    click.echo('Starting...')
+
+    corpus = random.sample(WORDS, 1000)
+    stats = Counter()
+    bad_words = {}
+
+    with click.progressbar(corpus) as bar:
+        for word in bar:
+            winner, end_state = play_game(players.cpu, new_game(word))
+
+            stats[winner] += 1
+            if winner == Player.WordCzar:
+                bad_words[word] = end_state
+
+    click.echo(stats)
+
+    for word, state in bad_words.items():
+        click.echo(f'{word}\n{state}\n\n')
+
+
+if __name__ == '__main__':
+    main()
