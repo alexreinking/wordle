@@ -5,7 +5,10 @@ from pathlib import Path
 MAX_GUESSES = 6
 WORD_LENGTH = 5
 
-WORDS_SET = set(word.lower() for word in Path('dictionary.txt').read_text().split('\n')
+SCRIPT_PATH = Path(__file__).parent
+DICT_PATH = SCRIPT_PATH.parent.parent / 'dictionary.txt'
+
+WORDS_SET = set(word.lower() for word in DICT_PATH.read_text().split('\n')
                 if len(word) == WORD_LENGTH)
 WORDS = list(sorted(WORDS_SET))
 

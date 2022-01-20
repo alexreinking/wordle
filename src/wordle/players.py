@@ -79,6 +79,11 @@ def cpu():
 
         return dict_histogram
 
+    if dist := getattr(cpu, 'dist', None):
+        pass
+    else:
+        dist = cpu.dist = get_dist(WORDS)
+
     def get_best_word(words):
         def score_word(w):
             score = 0
@@ -97,9 +102,12 @@ def cpu():
 
         return max(words, key=score_word)
 
+    if current_guess := getattr(cpu, 'initial_guess', None):
+        pass
+    else:
+        current_guess = cpu.initial_guess = get_best_word(WORDS)
+
     possible_words = WORDS
-    dist = get_dist(possible_words)
-    current_guess = get_best_word(possible_words)
 
     while True:
         guesses, hints = yield current_guess

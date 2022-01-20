@@ -1,5 +1,5 @@
 import random
-from typing import Optional
+from typing import Optional, Tuple
 
 from .types import GameState, WORDS, Player, MAX_GUESSES, Hint, WORDS_SET, WORD_LENGTH, get_hint_for_guess
 
@@ -57,7 +57,7 @@ def submit_guess(state: GameState, guess: str) -> GameState:
     )
 
 
-def play_game(player, state: Optional[GameState] = None):
+def play_game(player, state: Optional[GameState] = None) -> Tuple[Player, GameState]:
     player = player()
 
     if state is None:
