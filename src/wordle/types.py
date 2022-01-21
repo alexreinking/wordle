@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import List
+
+import click
 
 MAX_GUESSES = 6
 WORD_LENGTH = 5
@@ -37,21 +42,35 @@ class Hint(Enum):
             case Hint.Incorrect:
                 return u'🟥'
 
+    @property
+    def color(self):
+        match self:
+            case Hint.Correct:
+                return 'green'
+            case Hint.CorrectLetter:
+                return 'yellow'
+            case Hint.Incorrect:
+                return 'red'
 
-def get_hint_for_guess(guess: str, solution: str) -> [Hint]:
-    """
-    >>> get_hint_for_guess('aaper', 'apple')
-    [<Hint.Correct: 0>, <Hint.CorrectLetter: 1>, <Hint.Correct: 0>, <Hint.CorrectLetter: 1>, <Hint.Incorrect: 2>]
-    """
-    hints = []
-    for guess_ch, sol_ch in zip(guess, solution):
-        if guess_ch == sol_ch:
-            hints.append(Hint.Correct)
-        elif guess_ch in solution:
-            hints.append(Hint.CorrectLetter)
-        else:
-            hints.append(Hint.Incorrect)
-    return hints
+    @staticmethod
+    def parse(letter):
+        return {
+            '*': Hint.Correct,
+            '?': Hint.CorrectLetter,
+            'x': Hint.Incorrect,
+        }[letter]
+
+    @staticmethod
+    def for_guess(guess: str, solution: str) -> List[Hint]:
+        hints = []
+        for guess_ch, sol_ch in zip(guess, solution):
+            if guess_ch == sol_ch:
+                hints.append(Hint.Correct)
+            elif guess_ch in solution:
+                hints.append(Hint.CorrectLetter)
+            else:
+                hints.append(Hint.Incorrect)
+        return hints
 
 
 class Player(Enum):
@@ -59,8 +78,14 @@ class Player(Enum):
     WordCzar = 1
 
 
-@dataclass
+@dataclass(slots=True)
 class GameState:
-    solution: str
-    guesses: [str] = field(default_factory=list)
-    hints: [[Hint]] = field(default_factory=list)
+    guesses: List[str] = field(default_factory=list)
+    hints: List[List[Hint]] = field(default_factory=list)
+
+    def render(self):
+        for guess, hint in zip(self.guesses, self.hints):
+            colored_guess = ''.join(click.style(letter, fg=h.color)
+                                    for letter, h in zip(guess, hint))
+            output = f'{colored_guess}  {"".join(h.emoji for h in hint)}'
+            click.echo(output)

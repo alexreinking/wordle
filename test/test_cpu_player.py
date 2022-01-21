@@ -3,7 +3,7 @@ from collections import Counter
 
 import click
 
-from wordle import play_game, players, new_game, WORDS, Player
+from wordle import play_game, players, WORDS, Player, czars
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
 
     with click.progressbar(corpus) as bar:
         for word in bar:
-            winner, end_state = play_game(players.cpu, new_game(word))
+            winner, end_state = play_game(players.cpu, czars.local(word))
 
             stats[winner] += 1
             if winner == Player.WordCzar:

@@ -3,7 +3,7 @@ from collections import Counter
 
 import click
 
-from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES, get_hint_for_guess
+from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES
 
 
 def _validate_word_input(word: str):
@@ -13,26 +13,10 @@ def _validate_word_input(word: str):
     return word
 
 
-def _render(guesses, hints):
-    color_map = {
-        Hint.Correct: 'green',
-        Hint.CorrectLetter: 'yellow',
-        Hint.Incorrect: 'red',
-    }
-
-    for guess, hint in zip(guesses, hints):
-        colored_guess = ''.join(click.style(letter, fg=color_map[h])
-                                for letter, h in zip(guess, hint))
-        output = f'{colored_guess}  {"".join(x.emoji for x in hint)}'
-        click.echo(output)
-
-
 def human():
-    info = None
     while True:
-        if info:
-            _render(*info)
-        info = yield click.prompt('>>>', value_proc=_validate_word_input)
+        if state := (yield click.prompt('>>>', value_proc=_validate_word_input)):
+            state.render()
 
 
 def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
@@ -110,27 +94,27 @@ def cpu():
     possible_words = WORDS
 
     while True:
-        guesses, hints = yield current_guess
-        assert guesses[-1] == current_guess
+        state = yield current_guess
+        assert state.guesses[-1] == current_guess
 
         # Record which letters we have guessed in which positions
         for let, guess_set in zip(current_guess, position_guesses):
             guess_set.add(let)
             all_letter_guesses.add(let)
 
-        for i, hint in enumerate(hints[-1]):
+        for i, hint in enumerate(state.hints[-1]):
             if hint == Hint.Correct:
                 position_mask[i] = 0
 
         possible_words = [word for word in possible_words
-                          if _word_is_compatible_with_hints(word, guesses, hints)]
+                          if _word_is_compatible_with_hints(word, state.guesses, state.hints)]
         dist = get_dist(possible_words)
 
         if len(possible_words) == 1:
             yield possible_words[0]
             return
 
-        if len(guesses) < MAX_GUESSES - 1:
+        if len(state.guesses) < MAX_GUESSES - 1:
             current_guess = get_best_word(WORDS)
         else:
             current_guess = get_best_word(possible_words)
@@ -155,7 +139,7 @@ def optimal():
                     score += _word_is_compatible_with_hints(
                         alternate,
                         guesses + [guess],
-                        hints + [get_hint_for_guess(guess, solution)]
+                        hints + [Hint.for_guess(guess, solution)]
                     )
             score = score / inner_sample_size
             best = min(best, (score, guess))
