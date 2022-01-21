@@ -6,7 +6,7 @@ Created by Rachel Lawrence and Alex Reinking
 
 Depends on Python 3.10+. Create a virtual environment:
 
-```shell
+```console
 $ python3.10 -m venv venv
 $ . venv/bin/activate
 $ python -m pip install -U pip setuptools
@@ -17,7 +17,7 @@ $ python -m pip install -r requirements.txt
 
 By default, running `main.py` will put you in an interactive mode where you play the game locally.
 
-```shell
+```console
 $ python main.py
 >>>: apple
 apple  🟥🟥🟥🟥🟨
@@ -51,7 +51,7 @@ Guesser won!
 
 To solve the online wordle, override the Guesser to be the `cpu` and the Czar to be `remote`:
 
-```shell
+```console
 $ python main.py --guesser cpu --czar remote
 hint for arose: x??xx
 arose  🟥🟨🟨🟥🟥
