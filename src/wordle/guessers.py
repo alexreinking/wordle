@@ -47,48 +47,43 @@ def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
 
 def cpu() -> Guesser:
     position_mask = [1] * WORD_LENGTH
-    position_guesses = [set() for _ in range(WORD_LENGTH)]
-    all_letter_guesses = set()
+    position_guesses = [[1] * 26 for _ in range(WORD_LENGTH)]
+    all_letter_guesses = [1] * 26
 
     def get_dist(words):
         normalizing_factor = len(words) * WORD_LENGTH
 
         dict_histogram = Counter()
         for word in words:
-            for i, letter in enumerate(word):
-                dict_histogram[letter] += 1 * position_mask[i]
+            for i, let in enumerate(word):
+                dict_histogram[let] += 1 * position_mask[i]
 
         for k in dict_histogram:
             dict_histogram[k] /= normalizing_factor
 
         return dict_histogram
 
-    if dist := getattr(cpu, 'dist', None):
-        pass
-    else:
+    if (dist := getattr(cpu, 'dist', None)) is None:
         dist = cpu.dist = get_dist(WORDS)
 
     def get_best_word(words):
         def score_word(w):
             score = 0
-            seen = set()
-            for i, let in enumerate(w):
-                if let in seen:
-                    continue
-                seen.add(let)
-                if position_mask[i]:
-                    if let not in position_guesses[i]:
-                        score += dist[let]
-                else:
-                    if let not in all_letter_guesses:
-                        score += dist[let]
+            seen = [1] * 26
+            a_off = ord('a')
+            for let, pos_m, pos_g in zip(w, position_mask, position_guesses):
+                let_i = ord(let) - a_off
+                score += seen[let_i] * dist[let] * (
+                        pos_m * pos_g[let_i]
+                        + (1 - pos_m) * all_letter_guesses[let_i]
+                )
+                seen[let_i] = 0
+
             return score
 
         return max(words, key=score_word)
 
-    if current_guess := getattr(cpu, 'initial_guess', None):
-        pass
-    else:
+    if (current_guess := getattr(cpu, 'initial_guess', None)) is None:
         current_guess = cpu.initial_guess = get_best_word(WORDS)
 
     possible_words = WORDS
@@ -99,8 +94,8 @@ def cpu() -> Guesser:
 
         # Record which letters we have guessed in which positions
         for let, guess_set in zip(current_guess, position_guesses):
-            guess_set.add(let)
-            all_letter_guesses.add(let)
+            guess_set[ord(let) - ord('a')] = 0
+            all_letter_guesses[ord(let) - ord('a')] = 0
 
         for i, hint in enumerate(state.hints[-1]):
             if hint == Hint.Correct:
