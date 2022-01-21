@@ -15,15 +15,32 @@ def get_winner(state: GameState) -> Optional[Player]:
     return None
 
 
-def play_game(player, czar) -> Tuple[Player, GameState]:
+def play_game(player, czar, interactive=False) -> Tuple[Player, GameState]:
     state = GameState()
-    player = player()
 
-    while get_winner(state) is None:
-        guess = player.send(state if state.guesses else None)
+    czar.send(None)
+    guess = player.send(None)
+
+    while True:
+        hint = czar.send(guess)
+
         state = GameState(
             guesses=state.guesses + [guess],
-            hints=state.hints + [czar(guess)],
+            hints=state.hints + [hint],
         )
 
-    return get_winner(state), state
+        if get_winner(state) is not None:
+            break
+
+        if interactive:
+            state.render()
+
+        guess = player.send(state)
+
+    winner = get_winner(state)
+
+    if interactive:
+        state.render()
+        print(f'{winner.name} won!')
+
+    return winner, state

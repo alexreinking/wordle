@@ -2,17 +2,17 @@ import random
 
 import click
 
-from wordle.types import WORD_LENGTH, Hint, WORDS
+from wordle.types import WORD_LENGTH, Hint, WORDS, Czar
 
 
-def local(solution=''):
+def local(solution='') -> Czar:
     assert not solution or len(solution) == WORD_LENGTH
     solution = solution or random.choice(WORDS)
 
-    def _get_hint(guess):
-        return Hint.for_guess(guess, solution)
-
-    return _get_hint
+    hint = None
+    while True:
+        guess: str = yield hint
+        hint = Hint.for_guess(guess, solution)
 
 
 def _validate_hint_input(hint: str):
@@ -25,11 +25,11 @@ def _validate_hint_input(hint: str):
         raise click.UsageError('Use * = correct, ? = correct letter, and x = incorrect') from e
 
 
-def remote():
-    def _ask_human(guess):
-        return click.prompt(f'hint for {guess}', value_proc=_validate_hint_input)
-
-    return _ask_human
+def remote() -> Czar:
+    hint = None
+    while True:
+        guess = yield hint
+        hint = click.prompt(f'hint for {guess}', value_proc=_validate_hint_input)
 
 
 __all__ = [local, remote]

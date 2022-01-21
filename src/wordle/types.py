@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -73,11 +74,6 @@ class Hint(Enum):
         return hints
 
 
-class Player(Enum):
-    Guesser = 0
-    WordCzar = 1
-
-
 @dataclass(slots=True)
 class GameState:
     guesses: List[str] = field(default_factory=list)
@@ -89,3 +85,12 @@ class GameState:
                                     for letter, h in zip(guess, hint))
             output = f'{colored_guess}  {"".join(h.emoji for h in hint)}'
             click.echo(output)
+
+
+class Player(Enum):
+    Guesser = 0
+    WordCzar = 1
+
+
+Guesser = typing.Generator[str, GameState, None]
+Czar = typing.Generator[List[Hint], str, None]

@@ -3,7 +3,7 @@ from collections import Counter
 
 import click
 
-from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES
+from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES, Guesser
 
 
 def _validate_word_input(word: str):
@@ -13,10 +13,9 @@ def _validate_word_input(word: str):
     return word
 
 
-def human():
+def human() -> Guesser:
     while True:
-        if state := (yield click.prompt('>>>', value_proc=_validate_word_input)):
-            state.render()
+        yield click.prompt('>>>', value_proc=_validate_word_input)
 
 
 def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
@@ -45,7 +44,7 @@ def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
     return True
 
 
-def cpu():
+def cpu() -> Guesser:
     position_mask = [1] * WORD_LENGTH
     position_guesses = [set() for _ in range(WORD_LENGTH)]
     all_letter_guesses = set()
@@ -120,7 +119,7 @@ def cpu():
             current_guess = get_best_word(possible_words)
 
 
-def optimal():
+def optimal() -> Guesser:
     possible_words = WORDS
     guesses, hints = [], []
 
