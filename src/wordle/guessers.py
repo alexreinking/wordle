@@ -66,21 +66,21 @@ def cpu() -> Guesser:
     if (dist := getattr(cpu, 'dist', None)) is None:
         dist = cpu.dist = get_dist(WORDS)
 
+    def score_word(w):
+        score = 0
+        seen = [1] * 26
+        a_off = ord('a')
+        for let, pos_m, pos_g in zip(w, position_mask, position_guesses):
+            let_i = ord(let) - a_off
+            score += seen[let_i] * dist[let] * (
+                    pos_m * pos_g[let_i]
+                    + (1 - pos_m) * all_letter_guesses[let_i]
+            )
+            seen[let_i] = 0
+
+        return score
+
     def get_best_word(words):
-        def score_word(w):
-            score = 0
-            seen = [1] * 26
-            a_off = ord('a')
-            for let, pos_m, pos_g in zip(w, position_mask, position_guesses):
-                let_i = ord(let) - a_off
-                score += seen[let_i] * dist[let] * (
-                        pos_m * pos_g[let_i]
-                        + (1 - pos_m) * all_letter_guesses[let_i]
-                )
-                seen[let_i] = 0
-
-            return score
-
         return max(words, key=score_word)
 
     if (current_guess := getattr(cpu, 'initial_guess', None)) is None:
