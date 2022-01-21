@@ -3,20 +3,9 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 from typing import List
 
 import click
-
-MAX_GUESSES = 6
-WORD_LENGTH = 5
-
-SCRIPT_PATH = Path(__file__).parent
-DICT_PATH = SCRIPT_PATH.parent.parent / 'dictionary.txt'
-
-WORDS_SET = set(word.lower() for word in DICT_PATH.read_text().split('\n')
-                if len(word) == WORD_LENGTH)
-WORDS = list(sorted(WORDS_SET))
 
 
 class Hint(Enum):

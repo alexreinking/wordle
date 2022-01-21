@@ -2,7 +2,8 @@ import random
 
 import click
 
-from wordle.types import WORD_LENGTH, Hint, WORDS, Czar
+from .game import WORDS, WORD_LENGTH
+from .types import Hint, Czar
 
 
 def local(solution='') -> Czar:

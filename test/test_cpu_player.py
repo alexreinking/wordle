@@ -3,7 +3,9 @@ from collections import Counter
 
 import click
 
-from wordle import play_game, guessers, WORDS, Player, czars
+from wordle import play_game, guessers, czars
+from wordle.game import WORDS
+from wordle.types import Player
 
 
 def main():

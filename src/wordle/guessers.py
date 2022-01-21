@@ -3,7 +3,8 @@ from collections import Counter
 
 import click
 
-from .types import WORDS, WORD_LENGTH, WORDS_SET, Hint, MAX_GUESSES, Guesser
+from .game import WORDS, WORD_LENGTH, WORDS_SET, MAX_GUESSES
+from .types import Hint, Guesser
 
 
 def _validate_word_input(word: str):
