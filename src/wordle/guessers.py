@@ -1,5 +1,4 @@
 import random
-from collections import Counter
 
 import click
 
@@ -52,13 +51,13 @@ def cpu() -> Guesser:
 
     def get_dist(words):
         normalizing_factor = len(words) * WORD_LENGTH
-
-        dict_histogram = Counter()
+        a_off = ord('a')
+        dict_histogram = [0] * 26
         for word in words:
-            for i, let in enumerate(word):
-                dict_histogram[let] += 1 * position_mask[i]
+            for let, p in zip(word, position_mask):
+                dict_histogram[ord(let) - a_off] += p
 
-        for k in dict_histogram:
+        for k in range(26):
             dict_histogram[k] /= normalizing_factor
 
         return dict_histogram
@@ -72,9 +71,12 @@ def cpu() -> Guesser:
         a_off = ord('a')
         for let, pos_m, pos_g in zip(w, position_mask, position_guesses):
             let_i = ord(let) - a_off
-            score += seen[let_i] * dist[let] * (
-                    pos_m * pos_g[let_i]
-                    + (1 - pos_m) * all_letter_guesses[let_i]
+            score += (
+                    seen[let_i] *  # Only count first occurrence of letter
+                    dist[let_i] * (  # Weight by frequency in distribution of possibilities
+                            pos_m * pos_g[let_i]  # Position solution unknown and letter+pos not yet guessed OR
+                            + (1 - pos_m) * all_letter_guesses[let_i]  # Position soln known but letter never guessed.
+                    )
             )
             seen[let_i] = 0
 
