@@ -79,6 +79,9 @@ class GameState:
             output = f'{colored_guess}  {"".join(h.emoji for h in hint)}'
             click.echo(output)
 
+    def __bool__(self):
+        return bool(self.guesses and self.hints)
+
 
 class Player(Enum):
     Guesser = 0

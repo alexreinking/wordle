@@ -10,7 +10,7 @@ SCRIPT_PATH = Path(__file__).parent
 DICT_PATH = SCRIPT_PATH.parent.parent / 'dictionary.txt'
 
 WORDS_SET = set(word.lower() for word in DICT_PATH.read_text().split('\n')
-                if len(word) == WORD_LENGTH)
+                if len(word) == WORD_LENGTH and '-' not in word)
 WORDS = list(sorted(WORDS_SET))
 
 
@@ -28,11 +28,10 @@ def get_winner(state: GameState) -> Optional[Player]:
 
 def play_game(player, czar, interactive=False) -> Tuple[Player, GameState]:
     state = GameState()
-
     czar.send(None)
-    guess = player.send(None)
 
     while True:
+        guess = player.send(state or None)
         hint = czar.send(guess)
 
         state = GameState(
@@ -40,18 +39,12 @@ def play_game(player, czar, interactive=False) -> Tuple[Player, GameState]:
             hints=state.hints + [hint],
         )
 
-        if get_winner(state) is not None:
-            break
+        if (winner := get_winner(state)) is not None:
+            if interactive:
+                state.render()
+                print(f'{winner.name} won!')
+
+            return winner, state
 
         if interactive:
             state.render()
-
-        guess = player.send(state)
-
-    winner = get_winner(state)
-
-    if interactive:
-        state.render()
-        print(f'{winner.name} won!')
-
-    return winner, state
