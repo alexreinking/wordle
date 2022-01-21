@@ -4,7 +4,7 @@ from collections import Counter
 import click
 
 from .game import WORDS, WORD_LENGTH, WORDS_SET, MAX_GUESSES
-from .types import Hint, Guesser
+from .types import Hint, Guesser, RulesError
 
 
 def _validate_word_input(word: str):
@@ -110,9 +110,11 @@ def cpu() -> Guesser:
                           if _word_is_compatible_with_hints(word, state.guesses, state.hints)]
         dist = get_dist(possible_words)
 
+        if not possible_words:
+            raise RulesError('No possible solution!')
+
         if len(possible_words) == 1:
             yield possible_words[0]
-            return
 
         if len(state.guesses) < MAX_GUESSES - 1:
             current_guess = get_best_word(WORDS)

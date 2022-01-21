@@ -8,6 +8,10 @@ from typing import List
 import click
 
 
+class RulesError(Exception):
+    pass
+
+
 class Hint(Enum):
     Correct = 0
     CorrectLetter = 1

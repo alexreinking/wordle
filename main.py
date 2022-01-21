@@ -1,6 +1,7 @@
 import click
 
 from wordle import guessers, czars, play_game
+from wordle.types import RulesError
 
 
 @click.command()
@@ -14,7 +15,10 @@ def main(guesser, czar):
     guesser_fn = getattr(guessers, guesser)
     czar_fn = getattr(czars, czar)
 
-    play_game(guesser_fn(), czar_fn(), interactive=True)
+    try:
+        play_game(guesser_fn(), czar_fn(), interactive=True)
+    except RulesError as e:
+        click.echo(f'Something went wrong during gameplay: {e}')
 
 
 if __name__ == '__main__':
