@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import typing
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
+from typing import List, Generator
 
 import click
 
@@ -88,5 +87,5 @@ class Player(Enum):
     WordCzar = 1
 
 
-Guesser = typing.Generator[str, GameState, None]
-Czar = typing.Generator[List[Hint], str, None]
+Guesser = Generator[str, GameState, None]
+Czar = Generator[List[Hint], str, None]

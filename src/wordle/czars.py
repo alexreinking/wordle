@@ -12,7 +12,7 @@ def local(solution='') -> Czar:
 
     hint = None
     while True:
-        guess: str = yield hint
+        guess = yield hint
         hint = Hint.for_guess(guess, solution)
 
 
