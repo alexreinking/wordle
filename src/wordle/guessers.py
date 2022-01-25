@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 
 import click
 
@@ -52,6 +53,8 @@ def cpu() -> Guesser:
     all_letter_guesses = [1] * 26
 
     def get_dist(words):
+        assert words
+
         normalizing_factor = len(words) * WORD_LENGTH
         a_off = ord('a')
         dict_histogram = [0] * 26
@@ -105,10 +108,11 @@ def cpu() -> Guesser:
 
         possible_words = [word for word in possible_words
                           if _word_is_compatible_with_hints(word, state.guesses, state.hints)]
-        dist = get_dist(possible_words)
 
         if not possible_words:
             raise RulesError('No possible solution!')
+
+        dist = get_dist(possible_words)
 
         if len(possible_words) == 1:
             yield possible_words[0]
@@ -130,28 +134,28 @@ def optimal() -> Guesser:
         sample_size = 128
         inner_sample_size = min(len(possible_words), sample_size)
 
-        best = float('inf'), ''
+        scores = defaultdict(int)
+
         for guess in random.sample(WORDS, sample_size):
-            score = 0
             for solution in random.sample(possible_words, inner_sample_size):
                 for alternate in random.sample(possible_words, inner_sample_size):
-                    score += _word_is_compatible_with_hints(
+                    scores[guess] += _word_is_compatible_with_hints(
                         alternate,
                         guesses + [guess],
                         hints + [Hint.for_guess(guess, solution)]
                     )
-            score = score / inner_sample_size
-            best = min(best, (score, guess))
-        return best[1]
 
-    click.echo(f'We start with {len(possible_words)} possible words.')
+        return min(scores.keys(), key=lambda w: scores[w])
+
+    if (current_guess := getattr(optimal, 'current_guess', None)) is None:
+        current_guess = optimal.current_guess = get_guess()
+
     while True:
-        current_guess = get_guess()
-        click.echo(f'Guessing "{current_guess}"...')
-        guesses, hints = yield current_guess
+        state = yield current_guess
+        guesses, hints = state.guesses, state.hints
         possible_words = [word for word in possible_words
                           if _word_is_compatible_with_hints(word, guesses, hints)]
-        click.echo(f'There are now {len(possible_words)} possible words.')
+        current_guess = get_guess()
 
 
 __all__ = [human, cpu, optimal]

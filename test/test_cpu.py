@@ -10,8 +10,13 @@ def _lying_czar():
         yield [Hint.Incorrect] * WORD_LENGTH
 
 
-def test_can_solve_robot():
-    winner, _ = play_game(guessers.cpu(), czars.local('robot'))
+@pytest.mark.parametrize('word', [
+    'robot',
+    'sugar',
+    'doxed',
+])
+def test_can_solve_words(word):
+    winner, _ = play_game(guessers.cpu(), czars.local(word))
     assert winner == Player.Guesser
 
 

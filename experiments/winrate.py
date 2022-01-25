@@ -1,3 +1,4 @@
+import random
 import time
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
@@ -16,7 +17,7 @@ def print_bad_words(bad_words):
 
 
 def run_cpu_game(word):
-    return word, play_game(guessers.cpu(), czars.local(word))
+    return word, play_game(guessers.optimal(), czars.local(word))
 
 
 def main():
@@ -28,7 +29,7 @@ def main():
     start = time.time()
 
     with ProcessPoolExecutor() as pool:
-        for word, (winner, end_state) in pool.map(run_cpu_game, WORDS):
+        for word, (winner, end_state) in pool.map(run_cpu_game, random.sample(WORDS, 10)):
             stats[winner] += 1
             if winner == Player.WordCzar:
                 bad_words[word] = end_state
