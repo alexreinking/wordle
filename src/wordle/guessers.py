@@ -19,28 +19,30 @@ def human() -> Guesser:
 
 
 def _word_is_compatible_with_hints(word: str, guesses: [str], hints: [[Hint]]):
-    for guess, hint in zip(reversed(guesses), reversed(hints)):
-        for pos, (word_let, guess_let, hint_let) in enumerate(zip(word, guess, hint)):
-            if hint_let == Hint.Correct:
-                if word_let != guess_let:
-                    return False
-            elif hint_let == Hint.CorrectLetter:
-                if guess_let == word_let:
-                    # Would have been Hint.Correct otherwise.
-                    return False
-                if guess_let not in word:
-                    # The guessed letter must appear somewhere in the word.
-                    return False
-                if guess_let not in (word[:pos] + word[pos + 1:]):
-                    # Rule out the word when the correct letter cannot
-                    # be placed elsewhere in this word. For instance:
-                    #  abcde  (xx?xx)
-                    # would eliminate "fgchi" because there's no "c"
-                    # in a non-matching position.
-                    return False
-            elif hint_let == Hint.Incorrect:
-                if guess_let in word:
-                    return False
+    for guess, hint in zip(guesses, hints):
+        for pos in range(WORD_LENGTH):
+            hint_let = guess[pos]
+            match hint[pos]:
+                case Hint.Correct:
+                    if hint_let != word[pos]:
+                        return False
+                case Hint.CorrectLetter:
+                    if (
+                            # Would have been Hint.Correct otherwise.
+                            hint_let == word[pos] or
+                            # The guessed letter must appear somewhere in the word.
+                            hint_let not in word or
+                            # Rule out the word when the correct letter cannot
+                            # be placed elsewhere in this word. For instance:
+                            #  abcde  (xx?xx)
+                            # would eliminate "fgchi" because there's no "c"
+                            # in a non-matching position.
+                            hint_let not in (word[:pos] + word[pos + 1:])
+                    ):
+                        return False
+                case Hint.Incorrect:
+                    if hint_let in word:
+                        return False
     return True
 
 
