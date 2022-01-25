@@ -1,3 +1,4 @@
+import time
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 
@@ -24,11 +25,16 @@ def main():
     stats = Counter()
     bad_words = {}
 
+    start = time.time()
+
     with ProcessPoolExecutor() as pool:
         for word, (winner, end_state) in pool.map(run_cpu_game, WORDS):
             stats[winner] += 1
             if winner == Player.WordCzar:
                 bad_words[word] = end_state
+
+    end = time.time()
+    click.echo(end - start)
 
     click.echo(stats)
 
