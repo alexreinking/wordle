@@ -66,21 +66,19 @@ def cpu() -> Guesser:
         dist = cpu.dist = get_dist(WORDS)
 
     def score_word(w):
-        score = 0
-        seen = [1] * 26
+        let_score = [0] * 26
+        let_count = [0] * 26
+
         a_off = ord('a')
         for let, pos_m, pos_g in zip(w, position_mask, position_guesses):
             let_i = ord(let) - a_off
-            score += (
-                    seen[let_i] *  # Only count first occurrence of letter
-                    dist[let_i] * (  # Weight by frequency in distribution of possibilities
-                            pos_m * pos_g[let_i]  # Position solution unknown and letter+pos not yet guessed OR
-                            + (1 - pos_m) * all_letter_guesses[let_i]  # Position soln known but letter never guessed.
-                    )
+            let_score[let_i] += dist[let_i] * (  # Weight by frequency in distribution of possibilities
+                    pos_m * pos_g[let_i]  # Position solution unknown and letter+pos not yet guessed OR
+                    + (1 - pos_m) * all_letter_guesses[let_i]  # Position soln known but letter never guessed.
             )
-            seen[let_i] = 0
+            let_count[let_i] += 1
 
-        return score
+        return sum(let_score[i] / max(let_count[i], 1) for i in range(26))
 
     def get_best_word(words):
         return max(words, key=score_word)
