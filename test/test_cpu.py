@@ -10,13 +10,25 @@ def _lying_czar():
         yield [Hint.Incorrect] * WORD_LENGTH
 
 
-@pytest.mark.parametrize('word', [
+test_words = [
     'robot',
     'sugar',
     'doxed',
-])
+]
+
+
+@pytest.mark.parametrize('word', test_words)
 def test_can_solve_words(word):
-    winner, _ = play_game(guessers.cpu(), czars.local(word))
+    winner, state = play_game(guessers.cpu(), czars.local(word))
+    state.render()
+    assert winner == Player.Guesser
+
+
+@pytest.mark.skip('slow')
+@pytest.mark.parametrize('word', test_words)
+def test_optimal_solves_words(word):
+    winner, state = play_game(guessers.optimal(), czars.local(word))
+    state.render()
     assert winner == Player.Guesser
 
 

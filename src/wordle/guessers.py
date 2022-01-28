@@ -124,37 +124,51 @@ def cpu() -> Guesser:
 
 
 def optimal() -> Guesser:
+    guessable_words = WORDS
     possible_words = WORDS
     guesses, hints = [], []
+
+    absent_letters = set()
 
     def get_guess() -> str:
         if len(possible_words) == 1:
             return possible_words[0]
 
-        sample_size = 128
-        inner_sample_size = min(len(possible_words), sample_size)
-
         scores = defaultdict(int)
 
-        for guess in random.sample(WORDS, sample_size):
-            for solution in random.sample(possible_words, inner_sample_size):
-                for alternate in random.sample(possible_words, inner_sample_size):
-                    scores[guess] += _word_is_compatible_with_hints(
-                        alternate,
+        for guess in random.sample(guessable_words, min(len(guessable_words), 1000)):
+            for solution in possible_words:
+                scores[guess] = max(
+                    scores[guess],
+                    sum(_word_is_compatible_with_hints(
+                        word,
                         guesses + [guess],
                         hints + [Hint.for_guess(guess, solution)]
-                    )
+                    ) for word in possible_words)
+                )
 
         return min(scores.keys(), key=lambda w: scores[w])
 
     if (current_guess := getattr(optimal, 'current_guess', None)) is None:
-        current_guess = optimal.current_guess = get_guess()
+        current_guess = optimal.current_guess = random.choice(guessable_words)
 
     while True:
+        print(f'Guessing {current_guess}')
         state = yield current_guess
         guesses, hints = state.guesses, state.hints
+
+        absent_letters.update(w for w, h in zip(guesses[-1], hints[-1]) if h == Hint.Incorrect)
+
+        # TODO: if a word has only known letters and known non-letters, then exclude it, too
+        guessable_words = [word for word in guessable_words
+                           if any(letter not in absent_letters for letter in word)]
+
         possible_words = [word for word in possible_words
                           if _word_is_compatible_with_hints(word, guesses, hints)]
+
+        print(len(guessable_words))
+        print(len(possible_words))
+
         current_guess = get_guess()
 
 
